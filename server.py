@@ -4,8 +4,8 @@ from flask import Flask, request, jsonify
 import cv2 as cv
 import numpy as np
 import mediapipe as mp
+
 from model.keypoint_classifier.keypoint_classifier import KeyPointClassifier
-from model.point_history_classifier.point_history_classifier import PointHistoryClassifier
 from collections import deque, Counter
 import copy
 
@@ -13,13 +13,12 @@ app = Flask(__name__)
 
 # Initialize models
 keypoint_classifier = KeyPointClassifier()
-point_history_classifier = PointHistoryClassifier()
+
 
 # Read labels
 with open('model/keypoint_classifier/keypoint_classifier_label.csv', encoding='utf-8-sig') as f:
     keypoint_classifier_labels = [row[0] for row in csv.reader(f)]
-with open('model/point_history_classifier/point_history_classifier_label.csv', encoding='utf-8-sig') as f:
-    point_history_classifier_labels = [row[0] for row in csv.reader(f)]
+
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -56,7 +55,6 @@ def detect_gesture():
 
             # Conversion to relative coordinates / normalized coordinates
             pre_processed_landmark_list = pre_process_landmark(landmark_list)
-            pre_processed_point_history_list = pre_process_point_history(debug_image, point_history)
 
             # Hand sign classification
             hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
@@ -66,19 +64,8 @@ def detect_gesture():
                 else:
                     point_history.append([0, 0])
 
-                # Finger gesture classification
-                finger_gesture_id = 0
-                point_history_len = len(pre_processed_point_history_list)
-                if point_history_len == (history_length * 2):
-                    finger_gesture_id = point_history_classifier(pre_processed_point_history_list)
-
-                # Calculates the gesture IDs in the latest detection
-                finger_gesture_history.append(finger_gesture_id)
-                most_common_fg_id = Counter(finger_gesture_history).most_common()
-
                 return jsonify({
                     'hand_sign': keypoint_classifier_labels[hand_sign_id],
-                    'finger_gesture': point_history_classifier_labels[most_common_fg_id[0][0]]
                 })
             else:
                 point_history.append([0, 0])
