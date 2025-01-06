@@ -12,7 +12,7 @@ import copy
 app = Flask(__name__)
 
 # Initialize models
-keypoint_classifier = KeyPointClassifier()
+
 
 
 # Read labels
@@ -35,7 +35,7 @@ finger_gesture_history = deque(maxlen=history_length)
 def detect_gesture():
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
-
+    keypoint_classifier = KeyPointClassifier()
     file = request.files['image']
     image = np.frombuffer(file.read(), np.uint8)
     image = cv.imdecode(image, cv.IMREAD_COLOR)
